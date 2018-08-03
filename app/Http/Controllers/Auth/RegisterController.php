@@ -8,6 +8,11 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\RegistersUsers;
 
+// email verification
+use DB;
+use Mail;
+use Illuminate\Http\Request;
+
 class RegisterController extends Controller
 {
     /*
@@ -68,5 +73,44 @@ class RegisterController extends Controller
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
+    }
+
+    // register with email verification
+    public function register(Request $request){
+        $input = $request->all();
+        $validator = $this->validator($input);
+
+        if($validator->passes()){
+            $user = $this->create($input)->toArray();
+            $user['link'] = str_random(40);
+
+            DB::table('users_activation')->insert(['user_id'=>$user['id'], 'token'=>$user['link']]);
+            Mail::send('mail.activation', $user, function($message) use ($user){
+                $message->to($user['email']);
+                $message->subject('laravel - Activation Code');
+            });
+            return redirect()->to('login')->with('success', 'We sent you a verification code , please check your email');
+        }
+        return back()->with('Error', $validator->errors());
+    }
+
+    // log in when email is verified
+
+    public function userActivation($token){
+        $check = DB::table('users_activation')->where('token', $token)->first();
+
+        if(!is_null($check)){
+            $user = User::find($check->user_id);
+            if($user->is_activated == 1){
+
+                return redirectTo('login')->with('success', 'You are already active!');
+            }
+            $user->is_activated  = 1;
+            $user->save();
+            DB::table('users_activation')->where('token', $token)->delete();
+
+            return redirect()->to('login')->with('success', 'You are just activated');
+        }
+        return redirect()->to('login')->with('error', 'You are not activated ');
     }
 }

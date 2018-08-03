@@ -6,7 +6,14 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">{{ __('Login') }}</div>
-
+                {{-- success message --}}
+                @if($message = Session::get('success'))
+                    <div class="alert alert-info">{{$message}}</div>
+                @endif
+                {{-- error message --}}
+                @if($message = Session::get('error'))
+                    <div class="alert alert-danger">{{$message}}</div>
+                @endif
                 <div class="card-body">
                     <form method="POST" action="{{ route('login') }}" aria-label="{{ __('Login') }}">
                         @csrf

@@ -29,4 +29,5 @@ Route::group(['middleware'=>['web','auth']], function(){
     });
    
 });
+Route::get('/user/activation/{token}', 'Auth\RegisterController@userActivation');
 
